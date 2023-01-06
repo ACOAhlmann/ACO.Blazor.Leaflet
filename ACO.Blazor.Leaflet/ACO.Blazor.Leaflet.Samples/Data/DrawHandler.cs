@@ -1,17 +1,15 @@
-﻿using ACO.Blazor.Leaflet.Models;
+﻿using System.Drawing;
+using ACO.Blazor.Leaflet.JsInterops;
+using ACO.Blazor.Leaflet.Models;
 using ACO.Blazor.Leaflet.Models.Events;
 using Microsoft.JSInterop;
-using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
 using Rectangle = ACO.Blazor.Leaflet.Models.Rectangle;
 
 namespace ACO.Blazor.Leaflet.Samples.Data
 {
     public class DrawHandler : IDisposable
     {
-        enum DrawState
+        private enum DrawState
         {
             None,
             DrawingRectangle,
@@ -19,13 +17,18 @@ namespace ACO.Blazor.Leaflet.Samples.Data
             DrawingPolygon
         }
 
-        readonly Map _map;
-        readonly IJSRuntime _jsRuntime;
-        readonly Rectangle _rectangle = new Rectangle();
-        readonly Circle _circle = new Circle();
-        readonly Polygon _polygon = new Polygon();
-        readonly List<MouseEvent> _mouseClickEvents = new List<MouseEvent>();
-        DrawState _drawState;
+        private readonly Map _map;
+        private readonly IJSRuntime _jsRuntime;
+        private readonly Rectangle _rectangle = new();
+        private readonly Circle _circle = new();
+        private readonly Polygon _polygon = new();
+        private readonly List<MouseEvent> _mouseClickEvents = new();
+        private DrawState _drawState;
+
+        private static readonly string JsUpdateRectangle = $"{JsInteropConfig.BasePath}.updateRectangle";
+        private static readonly string JsUpdateCircle = $"{JsInteropConfig.BasePath}.updateCircle";
+        private static readonly string JsUpdatePolygon = $"{JsInteropConfig.BasePath}.updatePolygon";
+        private static readonly string JsUpdatePolyline = $"{JsInteropConfig.BasePath}.updatePolyline";
 
         public event EventHandler DrawFinished;
 
@@ -71,7 +74,7 @@ namespace ACO.Blazor.Leaflet.Samples.Data
             OnDrawToggle(isToggled);
         }
 
-        void OnDrawToggle(bool isToggled)
+        private void OnDrawToggle(bool isToggled)
         {
             _mouseClickEvents.Clear();
             if (isToggled)
@@ -85,7 +88,7 @@ namespace ACO.Blazor.Leaflet.Samples.Data
             }
         }
 
-        void OnMapClick(object sender, MouseEvent e)
+        private void OnMapClick(object sender, MouseEvent e)
         {
             if (_drawState != DrawState.DrawingPolygon)
             {
@@ -99,7 +102,7 @@ namespace ACO.Blazor.Leaflet.Samples.Data
             else
             {
                 // finish a line
-                if (_polygon.Shape?[0].Count() > 2 &&
+                if (_polygon.Shape?[0].Length > 2 &&
                     Math.Abs(_mouseClickEvents[0].ContainerPoint.X - e.ContainerPoint.X) < 10 &&
                     Math.Abs(_mouseClickEvents[0].ContainerPoint.Y - e.ContainerPoint.Y) < 10)
                 {
@@ -115,7 +118,7 @@ namespace ACO.Blazor.Leaflet.Samples.Data
             }
         }
 
-        void OnMouseMove(object sender, MouseEvent e)
+        private void OnMouseMove(object sender, MouseEvent e)
         {
             if (_mouseClickEvents.Any())
             {
@@ -123,13 +126,13 @@ namespace ACO.Blazor.Leaflet.Samples.Data
             }
         }
 
-        void AddClickAndUpdateShape(MouseEvent e)
+        private void AddClickAndUpdateShape(MouseEvent e)
         {
             _mouseClickEvents.Add(e);
             UpdateShape(e.LatLng);
         }
 
-        void UpdateShape(LatLng latLng)
+        private void UpdateShape(LatLng latLng)
         {
             switch (_drawState)
             {
@@ -142,10 +145,10 @@ namespace ACO.Blazor.Leaflet.Samples.Data
                 case DrawState.DrawingPolygon:
                     UpdatePolygon(latLng);
                     break;
-            };
+            }
         }
 
-        void UpdateRectangle(LatLng latLng)
+        private void UpdateRectangle(LatLng latLng)
         {
             _rectangle.Shape = new RectangleF(
                 _mouseClickEvents[0].LatLng.Lng,
@@ -156,37 +159,40 @@ namespace ACO.Blazor.Leaflet.Samples.Data
             AddOrUpdateShape(_rectangle);
         }
 
-        void UpdateCircle(LatLng latLng)
+        private void UpdateCircle(LatLng latLng)
         {
             _circle.Position = _mouseClickEvents[0].LatLng;
             // get a rough approximate for now: have to convert to meters - there should be better more precise algorithms out there
-            _circle.Radius = Math.Max(Math.Abs(latLng.Lng - _mouseClickEvents[0].LatLng.Lng), Math.Abs(latLng.Lat - _mouseClickEvents[0].LatLng.Lat)) * 111320;
+            _circle.Radius = Math.Max(Math.Abs(latLng.Lng - _mouseClickEvents[0].LatLng.Lng),
+                Math.Abs(latLng.Lat - _mouseClickEvents[0].LatLng.Lat)) * 111320;
             AddOrUpdateShape(_circle);
         }
 
-        void UpdatePolygon(LatLng latLng)
+        private void UpdatePolygon(LatLng? latLng)
         {
             // copy over previous points, add a new one if LatLng defined
             var size = _mouseClickEvents.Count;
             var shape = new PointF[1][];
             shape[0] = new PointF[latLng == null ? size : size + 1];
-            for (int i = 0; i < size; i++)
+            for (var i = 0; i < size; i++)
             {
                 shape[0][i] = _mouseClickEvents[i].LatLng.ToPointF();
             }
+
             if (latLng != null)
             {
                 shape[0][size] = latLng.ToPointF();
             }
+
             _polygon.Shape = shape;
             AddOrUpdateShape(_polygon);
         }
 
-        void AddOrUpdateShape(Layer shape)
+        private void AddOrUpdateShape(Layer shape)
         {
             if (_map.GetLayers().Contains(shape))
             {
-                LeafletInterops.UpdateShape(_jsRuntime, _map.Id, shape);
+                UpdateShapeJs(shape);
             }
             else
             {
@@ -194,14 +200,36 @@ namespace ACO.Blazor.Leaflet.Samples.Data
             }
         }
 
-        void DrawComplete()
+        private void UpdateShapeJs(Layer layer)
+        {
+            switch (layer)
+            {
+                case Rectangle:
+                    _jsRuntime.InvokeVoidAsync(JsUpdateRectangle, _map.Id, layer);
+                    break;
+                case Circle:
+                    _jsRuntime.InvokeVoidAsync(JsUpdateCircle, _map.Id, layer);
+                    break;
+                case Polygon:
+                    _jsRuntime.InvokeVoidAsync(JsUpdatePolygon, _map.Id, layer);
+                    break;
+                case Polyline:
+                    _jsRuntime.InvokeVoidAsync(JsUpdatePolyline, _map.Id, layer);
+                    break;
+                default:
+                    throw new NotImplementedException($"The layer {nameof(Layer)} has not been implemented.");
+            }
+        }
+
+
+        private void DrawComplete()
         {
             UnsubscribeFromMapEvents();
             _drawState = DrawState.None;
             DrawFinished?.Invoke(this, null);
         }
 
-        void UnsubscribeFromMapEvents()
+        private void UnsubscribeFromMapEvents()
         {
             _map.OnClick -= OnMapClick;
             _map.OnMouseMove -= OnMouseMove;

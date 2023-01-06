@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
 
     <PropertyGroup>
-        <TargetFramework>net5.0</TargetFramework>
+        <TargetFramework>net6.0</TargetFramework>
         <Version>0.5.0-alpha</Version>
         <Authors>Max Reble, Mihai Stan</Authors>
         <Company>ACO Ahlmann SE &amp; Co. KG</Company>

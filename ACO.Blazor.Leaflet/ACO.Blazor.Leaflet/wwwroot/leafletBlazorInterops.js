@@ -20,7 +20,7 @@ window.leafletBlazor = {
         maps[map.id] = leafletMap;
         layers[map.id] = [];
     },
-    addTilelayer: function (mapId, tileLayer, objectReference) {
+    addTileLayer: function (mapId, tileLayer, objectReference) {
         const layer = L.tileLayer(tileLayer.urlTemplate, {
             attribution: tileLayer.attribution,
             pane: tileLayer.pane,

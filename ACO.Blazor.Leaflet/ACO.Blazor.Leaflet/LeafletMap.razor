@@ -7,12 +7,13 @@
 @code {
     [Parameter] public Map Map { get; set; }
 
-
+    private static readonly string Create = $"{JsInterops.JsInteropConfig.BasePath}.create";
+    
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            await LeafletInterops.Create(JsRuntime, Map);
+            await JsRuntime.InvokeVoidAsync(Create, Map, DotNetObjectReference.Create(Map));
             Map.RaiseOnInitialized();
         }
     }

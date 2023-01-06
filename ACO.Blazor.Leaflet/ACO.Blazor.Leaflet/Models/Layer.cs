@@ -35,6 +35,8 @@ namespace ACO.Blazor.Leaflet.Models
 		{
 			Id = StringHelper.GetRandomString(20);
 		}
+		
+		
 
 		#region events
 
