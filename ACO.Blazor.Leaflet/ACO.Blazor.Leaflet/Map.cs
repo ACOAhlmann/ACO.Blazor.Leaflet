@@ -16,6 +16,13 @@ namespace ACO.Blazor.Leaflet
 {
 	public class Map
 	{
+
+        /// <summary>
+        /// Proj4 definition for the projection
+		/// When not set (null) it defaults to WGS84
+        /// </summary>
+        public Crs Crs { get; set; } = null; 
+
 		/// <summary>
 		/// Initial geographic center of the map
 		/// </summary>
@@ -59,11 +66,11 @@ namespace ACO.Blazor.Leaflet
 		/// Defaults to true.
 		/// </summary>
 		public bool ZoomControl { get; set; } = true;
-
-		/// <summary>
-		/// Event raised when the component has finished its first render.
-		/// </summary>
-		public event Action OnInitialized;
+				
+        /// <summary>
+        /// Event raised when the component has finished its first render.
+        /// </summary>
+        public event Action OnInitialized;
 
 		public string Id { get; }
 
@@ -209,7 +216,9 @@ namespace ACO.Blazor.Leaflet
 			}
 		}
 
-		public ValueTask FitBounds(PointF corner1, PointF corner2, PointF? padding = null, float? maxZoom = null)
+		//public async Task AddControl(object control, string controlId) => await LeafletInterops.AddControl(_jsRuntime, Id, control,controlId);
+
+        public ValueTask FitBounds(PointF corner1, PointF corner2, PointF? padding = null, float? maxZoom = null)
 		{
 			return LeafletInterops.FitBounds(_jsRuntime, Id, corner1, corner2, padding, maxZoom);
 		}
@@ -220,6 +229,8 @@ namespace ACO.Blazor.Leaflet
 				new PointF(bounds.SouthWest.Lat, bounds.SouthWest.Lng), padding, maxZoom);
 		}
 
+		public ValueTask SetOpacity(Layer layer)
+			=> LeafletInterops.SetOpacity(_jsRuntime, Id, layer);
 
 		public ValueTask<Bounds> GetBoundsFromMarkers(params Marker[] markers)
 			=> LeafletInterops.GetBoundsFromMarkers(_jsRuntime, markers);
@@ -241,6 +252,7 @@ namespace ACO.Blazor.Leaflet
 
 		public async Task<LatLng> GetCenter() => await LeafletInterops.GetCenter(_jsRuntime, Id);
 		public async Task<float> GetZoom() => await LeafletInterops.GetZoom(_jsRuntime, Id);
+		public async Task<LatLng> ForwardProj(LatLng latlng) => await LeafletInterops.ForwardProj(_jsRuntime, Id, latlng);
 		public async Task<Bounds> GetBounds() => await LeafletInterops.GetBounds(_jsRuntime, Id);
 
 
@@ -252,12 +264,13 @@ namespace ACO.Blazor.Leaflet
 			OnBoundsChanged?.Invoke(this, new EventArgs());
 		}
 
-		/// <summary>
-		/// Increases the zoom level by one notch.
-		/// 
-		/// If <c>shift</c> is held down, increases it by three.
-		/// </summary>
-		public async Task ZoomIn(MouseEventArgs e) => await LeafletInterops.ZoomIn(_jsRuntime, Id, e);
+
+        /// <summary>
+        /// Increases the zoom level by one notch.
+        /// 
+        /// If <c>shift</c> is held down, increases it by three.
+        /// </summary>
+        public async Task ZoomIn(MouseEventArgs e) => await LeafletInterops.ZoomIn(_jsRuntime, Id, e);
 
 		/// <summary>
 		/// Decreases the zoom level by one notch.
@@ -266,9 +279,12 @@ namespace ACO.Blazor.Leaflet
 		/// </summary>
 		public async Task ZoomOut(MouseEventArgs e) => await LeafletInterops.ZoomOut(_jsRuntime, Id, e);
 
-		#region events
 
-		public delegate void MapEventHandler(object sender, Event e);
+
+
+        #region events
+
+        public delegate void MapEventHandler(object sender, Event e);
 
 		public delegate void MapResizeEventHandler(object sender, ResizeEvent e);
 
@@ -432,6 +448,6 @@ namespace ACO.Blazor.Leaflet
 		[JSInvokable]
 		public void NotifyContextMenu(MouseEvent eventArgs) => OnContextMenu?.Invoke(this, eventArgs);
 
-		#endregion InteractiveLayerEvents
-	}
+        #endregion InteractiveLayerEvents
+    }
 }

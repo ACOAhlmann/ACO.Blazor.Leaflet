@@ -1,4 +1,5 @@
 import "/_content/ACO.Blazor.Leaflet/leaflet/leaflet.js";
+import "/_content/ACO.Blazor.Leaflet/leaflet/proj4leaflet.js";
 import "/_content/ACO.Blazor.Leaflet/leaflet/Leaflet.ImageOverlay.Rotated.js";
 import "/_content/ACO.Blazor.Leaflet/leaflet/leaflet-heat.js";
 
@@ -7,14 +8,38 @@ export const layers = {};
 
 window.leafletBlazor = {
     create: function (map, objectReference) {
-        var leafletMap = L.map(map.id, {
-            center: map.center,
-            zoom: map.zoom,
-            zoomControl: map.zoomControl,
-            minZoom: map.minZoom ? map.minZoom : undefined,
-            maxZoom: map.maxZoom ? map.maxZoom : undefined,
-            maxBounds: map.maxBounds && map.maxBounds.item1 && map.maxBounds.item2 ? L.latLngBounds(map.maxBounds.item1, map.maxBounds.item2) : undefined,
-        });
+
+        var leafletMap;
+        if (map.crs) {
+            var crs = new L.Proj.CRS(map.crs.code, map.crs.proj4def, { // eslint-disable-line no-undef
+                transformation: L.Transformation(map.crs.transformation.a, map.crs.transformation.b, map.crs.transformation.c, map.crs.transformation.d),
+                resolutions: map.crs.resolutions,
+                origin: [map.crs.origin.lat, map.crs.origin.lng],
+                bounds: L.bounds([map.crs.bounds.southWest.lat, map.crs.bounds.southWest.lng], [map.crs.bounds.northEast.lat, map.crs.bounds.northEast.lng])
+            });
+
+            leafletMap = L.map(map.id, {
+                center: map.center,
+                zoom: map.zoom ? map.zoom : Math.floor((crs.options.resolutions.length - 1) / 2),
+                zoomControl: map.zoomControl,
+                minZoom: map.minZoom ? map.minZoom : 1,
+                maxZoom: map.maxZoom ? map.maxZoom : crs.options.resolutions.length - 1,
+                crs: crs
+            });
+        }
+        else {
+            leafletMap = L.map(map.id, {
+                center: map.center,
+                zoom: map.zoom ? map.zoom : 8,
+                zoomControl: map.zoomControl,
+                minZoom: map.minZoom ? map.minZoom : 1,
+                maxZoom: map.maxZoom ? map.maxZoom : 19,
+                crs: crs
+            });
+        }
+        map.maxBounds = leafletMap.maxBounds && map.maxBounds.item1 && map.maxBounds.item2 ? L.latLngBounds(map.maxBounds.item1, map.maxBounds.item2) :
+            crs ? L.latLngBounds(leafletMap.unproject(crs.projection.bounds.min), leafletMap.unproject(crs.projection.bounds.max)) :
+                undefined;
 
         connectMapEvents(leafletMap, objectReference);
         maps[map.id] = leafletMap;
@@ -51,6 +76,41 @@ window.leafletBlazor = {
             maxZoom: mbTilesLayer.maximumZoom
         });
         addLayer(mapId, layer, mbTilesLayer.id);
+    },
+    addWmsTilesLayer: function (mapId, wmsTilesLayer, objectReference) {
+        var map = maps[mapId];
+        const layer = L.tileLayer.wms(wmsTilesLayer.urlTemplate, {
+            //-- WMS
+            layers: wmsTilesLayer.layers,
+            styles: wmsTilesLayer.styles,
+            format: wmsTilesLayer.format,
+            transparent: wmsTilesLayer.transparent,
+            version: wmsTilesLayer.version,
+            uppercase: wmsTilesLayer.uppercase,
+            crs: map.crs,
+
+            //--TileLayer
+            attribution: wmsTilesLayer.attribution,
+            pane: wmsTilesLayer.pane,
+            // ---
+            tileSize: wmsTilesLayer.tileSize ? L.point(wmsTilesLayer.tileSize.width, wmsTilesLayer.tileSize.height) : L.point(256, 256),
+            opacity: wmsTilesLayer.opacity,
+            updateWhenZooming: wmsTilesLayer.updateWhenZooming,
+            updateInterval: wmsTilesLayer.updateInterval,
+            zIndex: wmsTilesLayer.zIndex,
+            bounds: wmsTilesLayer.bounds && wmsTilesLayer.bounds.item1 && wmsTilesLayer.bounds.item2 ? L.latLngBounds(wmsTilesLayer.bounds.item1, wmsTilesLayer.bounds.item2) : map.options.maxBounds,
+            // ---
+            minZoom: wmsTilesLayer.minimumZoom ? wmsTilesLayer.minimumZoom : map.options.minZoom,
+            maxZoom: wmsTilesLayer.maximumZoom ? wmsTilesLayer.maximumZoom : map.options.maxZoom,
+            subdomains: wmsTilesLayer.subdomains,
+            errorTileUrl: wmsTilesLayer.errorTileUrl,
+            zoomOffset: wmsTilesLayer.zoomOffset,
+            // TMS
+            zoomReverse: wmsTilesLayer.isZoomReversed,
+            detectRetina: wmsTilesLayer.detectRetina,
+            // crossOrigin
+        });
+        addLayer(mapId, layer, wmsTilesLayer.id);
     },
     addShapefileLayer: function (mapId, shapefileLayer, objectReference) {
         const layer = L.shapefile(shapefileLayer.urlTemplate);
@@ -137,6 +197,12 @@ window.leafletBlazor = {
             layer.setBounds([[rectangle.shape.bottom, rectangle.shape.left], [rectangle.shape.top, rectangle.shape.right]]);
         }
     },
+    setOpacity: function (mapId, layerId, opacity) {
+        let layer = layers[mapId].find(l => l.id === layerId);
+        if (layer !== undefined) {
+            layer.setOpacity(opacity);
+        }
+    },
     addCircle: function (mapId, circle, objectReference) {
         const layer = L.circle(circle.position,
             {
@@ -153,12 +219,12 @@ window.leafletBlazor = {
             layer.setLatLng(circle.position);
         }
     },
-    bringPathToFront: function (mapId, path){
-        let layer = layers[mapId].find(l => l.id ===path.id);
+    bringPathToFront: function (mapId, path) {
+        let layer = layers[mapId].find(l => l.id === path.id);
         layer.bringToFront();
     },
-    bringPathToBack: function (mapId, path){
-        let layer = layers[mapId].find(l => l.id ===path.id);
+    bringPathToBack: function (mapId, path) {
+        let layer = layers[mapId].find(l => l.id === path.id);
         layer.bringToBack();
     },
     addImageLayer: function (mapId, image, objectReference) {
@@ -202,13 +268,15 @@ window.leafletBlazor = {
     },
     addGeoJsonLayer: function (mapId, geodata, objectReference) {
         const geoDataObject = JSON.parse(geodata.geoJsonData);
+        const style = geodata.style;
         var options = {
             ...createInteractiveLayer(geodata),
             title: geodata.title,
             bubblingMouseEvents: geodata.isBubblingMouseEvents,
             onEachFeature: function onEachFeature(feature, layer) {
                 connectInteractionEvents(layer, objectReference);
-            }
+            },
+            style: style
         };
 
         const geoJsonLayer = L.geoJson(geoDataObject, options);
@@ -291,6 +359,10 @@ window.leafletBlazor = {
     openLayerPopup: function (mapId, layerId) {
         let layer = layers[mapId].find(l => l.id === layerId);
         layer.openPopup();
+    },
+    forwardProj: function (mapId, point) {
+        const x = maps[mapId].options.crs.projection._proj.forward([point.lng, point.lat]);
+        return { Lat: x[0], Lng: x[1] };
     }
 };
 

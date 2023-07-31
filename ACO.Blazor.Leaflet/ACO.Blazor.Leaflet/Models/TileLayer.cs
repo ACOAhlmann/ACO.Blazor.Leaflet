@@ -1,6 +1,6 @@
 ﻿namespace ACO.Blazor.Leaflet.Models
 {
-	public class TileLayer : GridLayer
+    public class TileLayer : GridLayer
 	{
 
 		/// <summary>

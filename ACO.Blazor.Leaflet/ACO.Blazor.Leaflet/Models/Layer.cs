@@ -31,6 +31,7 @@ namespace ACO.Blazor.Leaflet.Models
 		/// </summary>
 		public Popup Popup { get; set; }
 
+
 		protected Layer()
 		{
 			Id = StringHelper.GetRandomString(20);

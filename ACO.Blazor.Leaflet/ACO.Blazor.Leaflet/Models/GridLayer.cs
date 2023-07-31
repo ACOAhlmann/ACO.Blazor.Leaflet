@@ -28,7 +28,7 @@ namespace ACO.Blazor.Leaflet.Models
 		/// <summary>
 		/// If set, tiles will only be loaded inside the set.
 		/// </summary>
-		public Tuple<LatLng, LatLng> Bounds { get; set; }
+		public Tuple<LatLng, LatLng> Bounds { get; set; } = new Tuple<LatLng, LatLng>(new LatLng(-90f, -180f), new LatLng(90f, 180f));
 
-	}
+    }
 }

@@ -3,7 +3,7 @@ using System.Runtime.Serialization;
 
 namespace ACO.Blazor.Leaflet.Models
 {
-	public class Bounds
+    public class Bounds
 	{
 		[DataMember(Name = "_northEast")]
 		public LatLng NorthEast { get; set; }
