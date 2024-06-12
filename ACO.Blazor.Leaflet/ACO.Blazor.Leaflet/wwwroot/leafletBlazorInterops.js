@@ -289,6 +289,13 @@ window.leafletBlazor = {
 
         layersToBeRemoved.forEach(m => m.removeFrom(maps[mapId]));
     },
+
+    invalidateSize: function (mapId) {
+        maps[mapId].invalidateSize(false);
+    },
+    hasLayer: function (mapId, layerId) {
+        return layers[mapId].some(l => l.id === layerId);        
+    },
     updatePopupContent: function (mapId, layerId, content) {
         let layer = layers[mapId].find(l => l.id === layerId);
         if (layer !== undefined) {

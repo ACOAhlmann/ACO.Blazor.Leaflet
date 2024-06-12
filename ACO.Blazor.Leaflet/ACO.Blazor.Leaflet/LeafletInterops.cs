@@ -60,6 +60,10 @@ namespace ACO.Blazor.Leaflet
             DisposeLayerReference(layerId);
         }
 
+        public static async ValueTask<bool> HasLayer(IJSRuntime js, string mapId, string layerId)
+            => (await js.InvokeAsync<bool>($"{_BaseObjectContainer}.hasLayer", mapId, layerId));
+
+
         public static ValueTask UpdatePopupContent(IJSRuntime js, string mapId, Layer layer) =>
             js.InvokeVoidAsync($"{_BaseObjectContainer}.updatePopupContent", mapId, layer.Id, layer.Popup?.Content);
 
@@ -90,7 +94,9 @@ namespace ACO.Blazor.Leaflet
         public static ValueTask BringPathToBack(this Path path, IJSRuntime js, string mapId)
             => js.InvokeVoidAsync($"{_BaseObjectContainer}.bringPathToBack", mapId, path);
 
-
+        public static ValueTask InvalidateSize(IJSRuntime js, string mapId)
+           => js.InvokeVoidAsync($"{_BaseObjectContainer}.invalidateSize", mapId);
+        
         public static ValueTask OpenLayerPopup(IJSRuntime js, string mapId, Marker marker)
             => js.InvokeVoidAsync($"{_BaseObjectContainer}.openLayerPopup", mapId, marker.Id);
 

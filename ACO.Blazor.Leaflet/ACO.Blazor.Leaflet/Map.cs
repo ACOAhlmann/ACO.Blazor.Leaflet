@@ -131,7 +131,9 @@ namespace ACO.Blazor.Leaflet
 			_layers.Add(layer);
 		}
 
-		public ValueTask OpenMarkerPopup(Marker marker) => LeafletInterops.OpenLayerPopup(_jsRuntime, Id, marker);
+		public ValueTask InvalidateSize() => LeafletInterops.InvalidateSize(_jsRuntime, Id);
+
+        public ValueTask OpenMarkerPopup(Marker marker) => LeafletInterops.OpenLayerPopup(_jsRuntime, Id, marker);
 
 		/// <summary>
 		/// Remove a layer from the map.
@@ -154,7 +156,28 @@ namespace ACO.Blazor.Leaflet
 			_layers.Remove(layer);
 		}
 
-		public void RemoveAllLayersOfType<TLayer>() where TLayer : Layer
+        /// <summary>
+        /// Check if the map has the layer
+        /// </summary>
+        /// <param name="layer">The layer to be checked.</param>
+        /// <exception cref="System.ArgumentNullException">Throws when the layer is null.</exception>
+        /// <exception cref="UninitializedMapException">Throws when the map has not been yet initialized.</exception>
+        public async Task<bool> HasLayerAsync(Layer layer)
+        {
+            if (layer is null)
+            {
+                throw new ArgumentNullException(nameof(layer));
+            }
+
+            if (!IsInitialized)
+            {
+                throw new UninitializedMapException();
+            }
+            return await LeafletInterops.HasLayer(_jsRuntime, Id, layer.Id);
+        }
+
+
+        public void RemoveAllLayersOfType<TLayer>() where TLayer : Layer
 		{
 			if (!IsInitialized)
 			{
