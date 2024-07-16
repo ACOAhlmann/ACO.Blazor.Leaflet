@@ -30,6 +30,6 @@
 		/// <summary>
 		/// If true, WMS request parameter keys will be uppercase.
 		/// </summary>
-		public bool Uppercase { get; set; } = false;
+		public bool Uppercase { get; set; } = false;		
     }
 }

@@ -75,6 +75,11 @@ namespace ACO.Blazor.Leaflet
 		public string Id { get; }
 
 		private readonly ObservableCollection<Layer> _layers = new ObservableCollection<Layer>();
+		
+		/// <summary>
+		/// active base layer of the map
+		/// </summary>
+		private Layer _baseLayer { get; set; }
 
 		private readonly IJSRuntime _jsRuntime;
 
@@ -131,7 +136,46 @@ namespace ACO.Blazor.Leaflet
 			_layers.Add(layer);
 		}
 
-		public ValueTask InvalidateSize() => LeafletInterops.InvalidateSize(_jsRuntime, Id);
+		public void SetBaseLayer(Layer layer)
+		{
+			if (_baseLayer == null)
+				AddLayer(layer);
+			else if (_baseLayer != layer)
+				ReplaceLayer(_baseLayer, layer);
+
+			_baseLayer = layer;
+		}
+
+        /// <summary>
+        /// Add a layer to the map.
+        /// </summary>
+        /// <param name="layer">The layer to be added.</param>
+        /// <exception cref="System.ArgumentNullException">Throws when the layer is null.</exception>
+        /// <exception cref="UninitializedMapException">Throws when the map has not been yet initialized.</exception>
+        public void ReplaceLayer(Layer sourceLayer, Layer destinationLayer)
+        {
+            if (sourceLayer is null)
+            {
+                throw new ArgumentNullException(nameof(sourceLayer));
+            }
+            if (destinationLayer is null)
+            {
+                throw new ArgumentNullException(nameof(destinationLayer));
+            }
+
+
+            if (!IsInitialized)
+            {
+                throw new UninitializedMapException();
+            }
+
+            var idx = _layers.IndexOf(sourceLayer);
+			_layers[idx] = destinationLayer;
+        }
+
+
+
+        public ValueTask InvalidateSize() => LeafletInterops.InvalidateSize(_jsRuntime, Id);
 
         public ValueTask OpenMarkerPopup(Marker marker) => LeafletInterops.OpenLayerPopup(_jsRuntime, Id, marker);
 
