@@ -23,7 +23,10 @@ namespace ACO.Blazor.Leaflet.Models
 		/// </summary>
 		public int UpdateInterval { get; set; } = 200;
 
-		public int ZIndex { get; set; } = 1;
+        /// <summary>
+        /// Set the ZIndex of the layers. Layers with a lower number will be rendered behind a higher number.
+        /// </summary>
+        public int ZIndex { get; set; } = 1;
 
 		/// <summary>
 		/// If set, tiles will only be loaded inside the set.
