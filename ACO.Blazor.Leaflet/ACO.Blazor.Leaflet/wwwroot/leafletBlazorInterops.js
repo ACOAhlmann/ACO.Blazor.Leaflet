@@ -275,11 +275,16 @@ window.leafletBlazor = {
             bubblingMouseEvents: geodata.isBubblingMouseEvents,
             onEachFeature: function onEachFeature(feature, layer) {
                 connectInteractionEvents(layer, objectReference);
+
+                setTooltipAndPopupIfDefined(geodata, layer);
             },
             style: style
         };
 
         const geoJsonLayer = L.geoJson(geoDataObject, options);
+
+        mapEvents(geoJsonLayer, objectReference, {"remove": "NotifyRemove"});
+
         addLayer(mapId, geoJsonLayer, geodata.id);
     },
     removeLayer: function (mapId, layerId) {
