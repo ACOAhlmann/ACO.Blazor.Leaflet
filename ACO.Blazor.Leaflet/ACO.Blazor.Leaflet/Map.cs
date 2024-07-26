@@ -139,7 +139,8 @@ namespace ACO.Blazor.Leaflet
 		
         public ValueTask InvalidateSize() => LeafletInterops.InvalidateSize(_jsRuntime, Id);
 
-        public ValueTask OpenMarkerPopup(Marker marker) => LeafletInterops.OpenLayerPopup(_jsRuntime, Id, marker);
+        public ValueTask OpenMarkerPopup(Marker marker) => LeafletInterops.OpenLayerPopup(_jsRuntime, Id, marker.Id);
+        public ValueTask ClosePopup() => LeafletInterops.ClosePopup(_jsRuntime, Id);
 
 		/// <summary>
 		/// Remove a layer from the map.
@@ -432,15 +433,34 @@ namespace ACO.Blazor.Leaflet
 		private void NotifyBackgroundExceptionOccurred(Exception exception) =>
 			BackgroundExceptionOccurred?.Invoke(this, exception);
 
-		#endregion events
 
-		#region InteractiveLayerEvents
+        public delegate void PopupEventHandler(Map sender, PopupEvent e);
 
-		// Has the same events as InteractiveLayer, but it is not a layer. 
-		// Could place this code in its own class and make Layer inherit from that, but not every layer is interactive...
-		// Is there a way to not duplicate this code?
+        public event PopupEventHandler OnPopupOpen;
 
-		public delegate void MouseEventHandler(Map sender, MouseEvent e);
+        [JSInvokable]
+        public void NotifyPopupOpen(PopupEvent eventArgs)
+        {
+            OnPopupOpen?.Invoke(this, eventArgs);
+        }
+
+        public event PopupEventHandler OnPopupClose;
+
+        [JSInvokable]
+        public void NotifyPopupClose(PopupEvent eventArgs)
+        {
+            OnPopupClose?.Invoke(this, eventArgs);
+        }
+
+        #endregion events
+
+        #region InteractiveLayerEvents
+
+        // Has the same events as InteractiveLayer, but it is not a layer. 
+        // Could place this code in its own class and make Layer inherit from that, but not every layer is interactive...
+        // Is there a way to not duplicate this code?
+
+        public delegate void MouseEventHandler(Map sender, MouseEvent e);
 
 		public event MouseEventHandler OnClick;
 

@@ -93,6 +93,6 @@ namespace ACO.Blazor.Leaflet.Models
 			OnTooltipClose?.Invoke(this, eventArgs);
 		}
 
-		#endregion
-	}
+        #endregion
+    }
 }

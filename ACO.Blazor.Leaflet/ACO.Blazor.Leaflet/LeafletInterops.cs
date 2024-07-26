@@ -97,8 +97,11 @@ namespace ACO.Blazor.Leaflet
         public static ValueTask InvalidateSize(IJSRuntime js, string mapId)
            => js.InvokeVoidAsync($"{_BaseObjectContainer}.invalidateSize", mapId);
         
-        public static ValueTask OpenLayerPopup(IJSRuntime js, string mapId, Marker marker)
-            => js.InvokeVoidAsync($"{_BaseObjectContainer}.openLayerPopup", mapId, marker.Id);
+        public static ValueTask OpenLayerPopup(IJSRuntime js, string mapId, string layerId)
+            => js.InvokeVoidAsync($"{_BaseObjectContainer}.openLayerPopup", mapId, layerId);
+
+        public static ValueTask ClosePopup(IJSRuntime js, string mapId)
+           => js.InvokeVoidAsync($"{_BaseObjectContainer}.closePopup", mapId);
 
         public static ValueTask FitBounds(IJSRuntime js, string mapId, PointF corner1, PointF corner2, PointF? padding, float? maxZoom) =>
             js.InvokeVoidAsync($"{_BaseObjectContainer}.fitBounds", mapId, corner1, corner2, padding, maxZoom);

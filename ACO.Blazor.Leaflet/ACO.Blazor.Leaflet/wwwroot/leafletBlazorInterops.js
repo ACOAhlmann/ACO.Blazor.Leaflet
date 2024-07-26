@@ -283,7 +283,7 @@ window.leafletBlazor = {
 
         const geoJsonLayer = L.geoJson(geoDataObject, options);
 
-        mapEvents(geoJsonLayer, objectReference, {"remove": "NotifyRemove"});
+        mapEvents(geoJsonLayer, objectReference, { "remove": "NotifyRemove"});
 
         addLayer(mapId, geoJsonLayer, geodata.id);
     },
@@ -372,6 +372,10 @@ window.leafletBlazor = {
         let layer = layers[mapId].find(l => l.id === layerId);
         layer.openPopup();
     },
+    closePopup: function (mapId) {
+        const map = maps[mapId];
+        map.closePopup();
+    }, 
     forwardProj: function (mapId, point) {
         const x = maps[mapId].options.crs.projection._proj.forward([point.lng, point.lat]);
         return { Lat: x[0], Lng: x[1] };
@@ -563,6 +567,8 @@ function connectMapEvents(map, objectReference) {
         "keydown": "NotifyKeyDown",
         "keyup": "NotifyKeyUp",
         "preclick": "NotifyPreClick",
+        "popupopen": "NotifyPopupOpen",
+        "popupclose": "NotifyPopupClose",
     });
 }
 
